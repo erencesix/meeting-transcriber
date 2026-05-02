@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meeting Translator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #22263a;
+  --border: #2e3354;
+  --accent: #6c63ff;
+  --accent2: #a78bfa;
+  --text: #e8eaf6;
+  --muted: #8b8fa8;
+  --red: #ef4444;
+  --green: #22c55e;
+  --gold: #f59e0b;
+  --radius: 12px;
+}
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem 5rem;
+}
+.container { width: 100%; max-width: 860px; }
+
+/* Header */
+.header { text-align: center; margin-bottom: 2.5rem; }
+.header-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(108,99,255,0.15); border: 1px solid rgba(108,99,255,0.3);
+  color: var(--accent2); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 4px 12px; border-radius: 99px; margin-bottom: 16px;
+}
+h1 { font-size: clamp(1.8rem, 5vw, 2.6rem); font-weight: 700; line-height: 1.15; margin-bottom: 10px; }
+h1 span { background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.header p { color: var(--muted); font-size: 15px; }
+
+/* Card */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 1.2rem;
+}
+
+/* Upload zone */
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 3rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: var(--accent);
+  background: rgba(108,99,255,0.05);
+}
+.upload-zone input[type=file] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+.upload-icon { font-size: 2.5rem; margin-bottom: 12px; }
+.upload-zone h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+.upload-zone p { font-size: 13px; color: var(--muted); }
+.file-types { font-size: 11px; color: var(--muted); margin-top: 8px; background: var(--surface2); display: inline-block; padding: 3px 10px; border-radius: 99px; }
+
+/* File selected state */
+.file-info {
+  display: none; align-items: center; gap: 12px;
+  background: var(--surface2); border-radius: 8px; padding: 12px 16px;
+  margin-top: 12px;
+}
+.file-info.visible { display: flex; }
+.file-icon { font-size: 1.5rem; }
+.file-details { flex: 1; }
+.file-name { font-size: 14px; font-weight: 500; }
+.file-size { font-size: 12px; color: var(--muted); }
+.file-remove { font-size: 18px; cursor: pointer; color: var(--muted); transition: color 0.15s; background: none; border: none; }
+.file-remove:hover { color: var(--red); }
+
+/* Controls */
+.controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-top: 1.2rem; }
+.control-group { display: flex; flex-direction: column; gap: 6px; }
+.control-group label { font-size: 12px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; }
+select {
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+  font-family: 'Inter', sans-serif; font-size: 14px;
+  padding: 10px 14px; border-radius: 8px; outline: none; cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238b8fa8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+  padding-right: 32px;
+}
+select:focus { border-color: var(--accent); }
+
+.toggle-row { display: flex; align-items: center; gap: 10px; }
+.toggle { position: relative; width: 42px; height: 24px; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; inset: 0; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 99px; cursor: pointer; transition: 0.2s;
+}
+.toggle-slider:before {
+  content: ''; position: absolute; width: 16px; height: 16px;
+  left: 3px; top: 3px; background: var(--muted); border-radius: 50%; transition: 0.2s;
+}
+.toggle input:checked + .toggle-slider { background: var(--accent); border-color: var(--accent); }
+.toggle input:checked + .toggle-slider:before { transform: translateX(18px); background: white; }
+.toggle-label { font-size: 13px; color: var(--muted); }
+
+/* Process button */
+.process-btn {
+  margin-left: auto;
+  background: linear-gradient(135deg, var(--accent), #8b5cf6);
+  color: white; border: none; border-radius: 8px;
+  font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600;
+  padding: 11px 28px; cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; gap: 8px;
+}
+.process-btn:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(108,99,255,0.4); }
+.process-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* Progress */
+.progress-card { display: none; }
+.progress-card.visible { display: block; }
+.progress-steps { display: flex; flex-direction: column; gap: 12px; }
+.step {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 16px; border-radius: 8px;
+  background: var(--surface2); transition: all 0.3s;
+}
+.step.active { background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.3); }
+.step.done { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); }
+.step.error { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); }
+.step-icon { font-size: 1.3rem; width: 28px; text-align: center; flex-shrink: 0; }
+.step-text { flex: 1; }
+.step-title { font-size: 14px; font-weight: 500; }
+.step-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.step-status { font-size: 18px; flex-shrink: 0; }
+.spinner-sm {
+  width: 18px; height: 18px; border: 2px solid rgba(108,99,255,0.3);
+  border-top-color: var(--accent); border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Results */
+.results-card { display: none; }
+.results-card.visible { display: block; }
+
+/* Speakers */
+.speakers-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 1.2rem; }
+.speaker-chip {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 14px;
+}
+.speaker-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: white; flex-shrink: 0;
+}
+.speaker-info .speaker-name { font-size: 13px; font-weight: 600; }
+.speaker-info .speaker-role { font-size: 11px; color: var(--muted); }
+
+/* Tabs */
+.tabs { display: flex; gap: 4px; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0; }
+.tab-btn {
+  font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500;
+  padding: 10px 18px; background: none; border: none; color: var(--muted);
+  cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: all 0.15s;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--accent2); border-bottom-color: var(--accent); }
+.tab-content { display: none; padding-top: 1rem; }
+.tab-content.active { display: block; }
+
+/* Summary */
+.summary-text { font-size: 15px; line-height: 1.8; color: var(--text); }
+
+/* Chapters */
+.chapter { margin-bottom: 1.2rem; padding-bottom: 1.2rem; border-bottom: 1px solid var(--border); }
+.chapter:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.chapter-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.chapter-num {
+  width: 26px; height: 26px; border-radius: 6px;
+  background: rgba(108,99,255,0.2); color: var(--accent2);
+  font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.chapter-title { font-size: 14px; font-weight: 600; }
+.chapter-time { font-size: 11px; color: var(--muted); background: var(--surface2); padding: 2px 8px; border-radius: 99px; margin-left: auto; }
+.chapter-body { font-size: 13px; color: var(--muted); line-height: 1.7; padding-left: 36px; }
+
+/* Key Points */
+.key-points { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.key-point {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: var(--surface2); border-radius: 8px; padding: 12px 14px;
+  font-size: 14px; line-height: 1.6;
+}
+.key-point::before {
+  content: '→'; color: var(--accent2); font-weight: 700;
+  flex-shrink: 0; margin-top: 1px;
+}
+
+/* Highlights */
+.highlights { display: flex; flex-direction: column; gap: 10px; }
+.highlight {
+  background: var(--surface2); border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0; padding: 14px 16px;
+}
+.highlight-speaker {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--accent2); margin-bottom: 6px;
+}
+.highlight-quote { font-size: 14px; font-style: italic; line-height: 1.6; margin-bottom: 6px; }
+.highlight-context { font-size: 12px; color: var(--muted); }
+
+/* Transcript */
+.transcript-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; user-select: none; padding: 4px 0;
+}
+.transcript-toggle h3 { font-size: 14px; font-weight: 600; }
+.transcript-arrow { font-size: 12px; color: var(--muted); transition: transform 0.2s; }
+.transcript-arrow.open { transform: rotate(180deg); }
+.transcript-body {
+  display: none; margin-top: 1rem;
+  background: var(--surface2); border-radius: 8px; padding: 16px;
+  max-height: 400px; overflow-y: auto;
+}
+.transcript-body.visible { display: block; }
+.transcript-line { font-size: 13px; line-height: 1.9; color: var(--muted); }
+.transcript-line strong { color: var(--text); }
+
+/* Action bar */
+.action-bar { display: flex; gap: 8px; margin-top: 1rem; flex-wrap: wrap; }
+.action-btn {
+  font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500;
+  padding: 8px 16px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface2);
+  color: var(--text); transition: all 0.15s;
+  display: flex; align-items: center; gap: 6px;
+}
+.action-btn:hover { border-color: var(--accent); color: var(--accent2); }
+.action-btn.copied { border-color: var(--green); color: var(--green); }
+
+/* New meeting btn */
+.new-btn {
+  font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500;
+  padding: 9px 20px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--muted); transition: all 0.15s; margin-top: 1rem;
+}
+.new-btn:hover { color: var(--text); border-color: var(--text); }
+
+@media (max-width: 600px) {
+  .controls { flex-direction: column; }
+  .process-btn { margin-left: 0; width: 100%; justify-content: center; }
+  .tabs { overflow-x: auto; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-badge">🎙️ AI Meeting Translator</div>
+    <h1>Turn Japanese meetings into<br><span>clear, structured insights</span></h1>
+    <p>Upload audio → get transcript, summary, key points & highlights in your language</p>
+  </div>
+
+  <!-- Upload Card -->
+  <div class="card" id="upload-card">
+    <div class="upload-zone" id="upload-zone">
+      <input type="file" id="file-input" accept="audio/*,video/*,.mp3,.mp4,.wav,.m4a,.ogg,.webm,.mov" />
+      <div class="upload-icon">🎵</div>
+      <h3>Drop your meeting audio here</h3>
+      <p>or click to browse files</p>
+      <div class="file-types">MP3 · MP4 · WAV · M4A · OGG · WEBM · MOV</div>
+    </div>
+
+    <div class="file-info" id="file-info">
+      <div class="file-icon">🎙️</div>
+      <div class="file-details">
+        <div class="file-name" id="file-name">—</div>
+        <div class="file-size" id="file-size">—</div>
+      </div>
+      <button class="file-remove" onclick="removeFile()">✕</button>
+    </div>
+
+    <div class="controls">
+      <div class="control-group">
+        <label>Output Language</label>
+        <select id="lang-select">
+          <option value="id">🇮🇩 Indonesian</option>
+          <option value="en">🇬🇧 English</option>
+          <option value="both">🇮🇩 + 🇬🇧 Both</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Show Transcript</label>
+        <div class="toggle-row">
+          <label class="toggle">
+            <input type="checkbox" id="show-transcript" checked />
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="toggle-label">Include full transcript</span>
+        </div>
+      </div>
+      <button class="process-btn" id="process-btn" onclick="processAudio()" disabled>
+        <span>✦</span> Analyze Meeting
+      </button>
+    </div>
+  </div>
+
+  <!-- Progress Card -->
+  <div class="card progress-card" id="progress-card">
+    <div class="progress-steps">
+      <div class="step" id="step-upload">
+        <div class="step-icon">📤</div>
+        <div class="step-text">
+          <div class="step-title">Uploading audio</div>
+          <div class="step-desc">Sending file to transcription engine</div>
+        </div>
+        <div class="step-status" id="step-upload-status">⏳</div>
+      </div>
+      <div class="step" id="step-transcribe">
+        <div class="step-icon">🎙️</div>
+        <div class="step-text">
+          <div class="step-title">Transcribing Japanese audio</div>
+          <div class="step-desc">Whisper AI is converting speech to text</div>
+        </div>
+        <div class="step-status" id="step-transcribe-status">⏳</div>
+      </div>
+      <div class="step" id="step-analyze">
+        <div class="step-icon">🧠</div>
+        <div class="step-text">
+          <div class="step-title">Translating & analyzing</div>
+          <div class="step-desc">Identifying speakers, summarizing, extracting insights</div>
+        </div>
+        <div class="step-status" id="step-analyze-status">⏳</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Card -->
+  <div class="card results-card" id="results-card">
+
+    <!-- Speakers -->
+    <div style="margin-bottom: 1.4rem;">
+      <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 10px;">Participants</div>
+      <div class="speakers-grid" id="speakers-grid"></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('summary', this)">Summary</button>
+      <button class="tab-btn" onclick="switchTab('keypoints', this)">Key Points</button>
+      <button class="tab-btn" onclick="switchTab('highlights', this)">Highlights</button>
+    </div>
+
+    <div class="tab-content active" id="tab-summary">
+      <div class="summary-text" id="summary-text"></div>
+      <div style="margin-top: 1.4rem; border-top: 1px solid var(--border); padding-top: 1.2rem;">
+        <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 12px;">Meeting Chapters</div>
+        <div id="chapters-list"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-keypoints">
+      <ul class="key-points" id="keypoints-list"></ul>
+    </div>
+
+    <div class="tab-content" id="tab-highlights">
+      <div class="highlights" id="highlights-list"></div>
+    </div>
+
+    <!-- Transcript -->
+    <div style="margin-top: 1.4rem; border-top: 1px solid var(--border); padding-top: 1.2rem;" id="transcript-section">
+      <div class="transcript-toggle" onclick="toggleTranscript()">
+        <h3>📄 Full Translated Transcript</h3>
+        <span class="transcript-arrow" id="transcript-arrow">▼</span>
+      </div>
+      <div class="transcript-body" id="transcript-body"></div>
+    </div>
+
+    <!-- Actions -->
+    <div class="action-bar">
+      <button class="action-btn" onclick="copyResults()">📋 Copy Summary</button>
+      <button class="action-btn" onclick="downloadResults()">⬇ Download .txt</button>
+    </div>
+
+    <button class="new-btn" onclick="resetApp()">← Analyze another meeting</button>
+  </div>
+
+</div>
+
+<script>
+  let selectedFile = null;
+  let analysisData = null;
+  const COLORS = ['#6c63ff','#ec4899','#f59e0b','#22c55e','#06b6d4','#f97316'];
+
+  // File handling
+  const fileInput = document.getElementById('file-input');
+  const uploadZone = document.getElementById('upload-zone');
+
+  fileInput.addEventListener('change', e => {
+    if (e.target.files[0]) handleFile(e.target.files[0]);
+  });
+
+  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+  uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.classList.remove('drag-over');
+    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+
+  function handleFile(file) {
+    selectedFile = file;
+    document.getElementById('file-name').textContent = file.name;
+    document.getElementById('file-size').textContent = formatSize(file.size);
+    document.getElementById('file-info').classList.add('visible');
+    document.getElementById('process-btn').disabled = false;
+  }
+
+  function removeFile() {
+    selectedFile = null;
+    fileInput.value = '';
+    document.getElementById('file-info').classList.remove('visible');
+    document.getElementById('process-btn').disabled = true;
+  }
+
+  function formatSize(bytes) {
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  // Step management
+  function setStep(stepId, state) {
+    const step = document.getElementById('step-' + stepId);
+    const status = document.getElementById('step-' + stepId + '-status');
+    step.className = 'step ' + state;
+    if (state === 'active') {
+      status.innerHTML = '<div class="spinner-sm"></div>';
+    } else if (state === 'done') {
+      status.textContent = '✅';
+    } else if (state === 'error') {
+      status.textContent = '❌';
+    } else {
+      status.textContent = '⏳';
+    }
+  }
+
+  async function processAudio() {
+    if (!selectedFile) return;
+
+    const lang = document.getElementById('lang-select').value;
+
+    // Show progress
+    document.getElementById('upload-card').style.opacity = '0.5';
+    document.getElementById('upload-card').style.pointerEvents = 'none';
+    document.getElementById('progress-card').classList.add('visible');
+    document.getElementById('process-btn').disabled = true;
+
+    try {
+      // Step 1: Read file
+      setStep('upload', 'active');
+      const base64 = await fileToBase64(selectedFile);
+      setStep('upload', 'done');
+
+      // Step 2: Transcribe
+      setStep('transcribe', 'active');
+      const transcribeRes = await fetch('/api/transcribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          audio: base64,
+          filename: selectedFile.name,
+          mimeType: selectedFile.type || 'audio/mpeg'
+        })
+      });
+      const transcribeData = await transcribeRes.json();
+      if (transcribeData.error) throw new Error(transcribeData.error);
+      setStep('transcribe', 'done');
+
+      // Step 3: Analyze
+      setStep('analyze', 'active');
+      const analyzeRes = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transcript: transcribeData.transcript,
+          language: lang
+        })
+      });
+      const analyzeData = await analyzeRes.json();
+      if (analyzeData.error) throw new Error(analyzeData.error);
+      setStep('analyze', 'done');
+
+      analysisData = analyzeData;
+      renderResults(analyzeData, document.getElementById('show-transcript').checked);
+
+    } catch (err) {
+      const steps = ['upload', 'transcribe', 'analyze'];
+      steps.forEach(s => {
+        const el = document.getElementById('step-' + s);
+        if (el.className.includes('active')) setStep(s, 'error');
+      });
+      alert('Error: ' + err.message);
+      document.getElementById('upload-card').style.opacity = '1';
+      document.getElementById('upload-card').style.pointerEvents = 'auto';
+      document.getElementById('process-btn').disabled = false;
+    }
+  }
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderResults(data, showTranscript) {
+    document.getElementById('progress-card').classList.remove('visible');
+    document.getElementById('results-card').classList.add('visible');
+
+    // Speakers
+    const grid = document.getElementById('speakers-grid');
+    grid.innerHTML = '';
+    (data.speakers || []).forEach((sp, i) => {
+      const color = COLORS[i % COLORS.length];
+      const initial = (sp.name || sp.label || 'S').charAt(0).toUpperCase();
+      grid.innerHTML += `
+        <div class="speaker-chip">
+          <div class="speaker-avatar" style="background:${color}">${initial}</div>
+          <div class="speaker-info">
+            <div class="speaker-name">${escHtml(sp.name || sp.label)}</div>
+            <div class="speaker-role">${escHtml(sp.role || sp.summary?.substring(0,40) || 'Participant')}</div>
+          </div>
+        </div>`;
+    });
+
+    // Summary tab
+    document.getElementById('summary-text').textContent = data.tabs?.summary || '—';
+
+    // Chapters
+    const chapList = document.getElementById('chapters-list');
+    chapList.innerHTML = '';
+    (data.chapters || []).forEach((ch, i) => {
+      chapList.innerHTML += `
+        <div class="chapter">
+          <div class="chapter-header">
+            <div class="chapter-num">${i + 1}</div>
+            <div class="chapter-title">${escHtml(ch.title)}</div>
+            ${ch.timestamp ? `<div class="chapter-time">⏱ ${escHtml(ch.timestamp)}</div>` : ''}
+          </div>
+          <div class="chapter-body">${escHtml(ch.summary)}</div>
+        </div>`;
+    });
+
+    // Key points
+    const kpList = document.getElementById('keypoints-list');
+    kpList.innerHTML = '';
+    (data.tabs?.keyPoints || []).forEach(kp => {
+      kpList.innerHTML += `<li class="key-point">${escHtml(kp)}</li>`;
+    });
+
+    // Highlights
+    const hlList = document.getElementById('highlights-list');
+    hlList.innerHTML = '';
+    (data.tabs?.highlights || []).forEach(hl => {
+      hlList.innerHTML += `
+        <div class="highlight">
+          <div class="highlight-speaker">${escHtml(hl.speaker)}</div>
+          <div class="highlight-quote">"${escHtml(hl.quote)}"</div>
+          <div class="highlight-context">${escHtml(hl.context)}</div>
+        </div>`;
+    });
+
+    // Transcript
+    if (showTranscript && data.translatedTranscript) {
+      const lines = data.translatedTranscript.split('\n').filter(l => l.trim());
+      const transcriptBody = document.getElementById('transcript-body');
+      transcriptBody.innerHTML = lines.map(line => {
+        const match = line.match(/^\[(.+?)\]:\s*(.+)$/);
+        if (match) {
+          return `<div class="transcript-line"><strong>${escHtml(match[1])}:</strong> ${escHtml(match[2])}</div>`;
+        }
+        return `<div class="transcript-line">${escHtml(line)}</div>`;
+      }).join('');
+      document.getElementById('transcript-section').style.display = 'block';
+    } else {
+      document.getElementById('transcript-section').style.display = 'none';
+    }
+  }
+
+  function switchTab(tab, el) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+  }
+
+  function toggleTranscript() {
+    const body = document.getElementById('transcript-body');
+    const arrow = document.getElementById('transcript-arrow');
+    body.classList.toggle('visible');
+    arrow.classList.toggle('open');
+  }
+
+  function copyResults() {
+    if (!analysisData) return;
+    const t = analysisData.tabs;
+    const text = [
+      '=== MEETING SUMMARY ===',
+      t?.summary || '',
+      '',
+      '=== KEY POINTS ===',
+      (t?.keyPoints || []).map((k, i) => `${i+1}. ${k}`).join('\n'),
+      '',
+      '=== HIGHLIGHTS ===',
+      (t?.highlights || []).map(h => `[${h.speaker}] "${h.quote}"\n→ ${h.context}`).join('\n\n'),
+    ].join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = event.target;
+      btn.textContent = '✅ Copied!';
+      setTimeout(() => btn.textContent = '📋 Copy Summary', 2000);
+    });
+  }
+
+  function downloadResults() {
+    if (!analysisData) return;
+    const t = analysisData.tabs;
+    const speakers = (analysisData.speakers || []).map(s => `• ${s.name || s.label}${s.role ? ` (${s.role})` : ''}: ${s.summary || ''}`).join('\n');
+    const chapters = (analysisData.chapters || []).map((c, i) => `Chapter ${i+1}: ${c.title}\n${c.timestamp ? `Time: ${c.timestamp}\n` : ''}${c.summary}`).join('\n\n');
+    const text = [
+      'MEETING ANALYSIS REPORT',
+      '========================',
+      '',
+      'PARTICIPANTS',
+      speakers,
+      '',
+      'SUMMARY',
+      t?.summary || '',
+      '',
+      'CHAPTERS',
+      chapters,
+      '',
+      'KEY POINTS',
+      (t?.keyPoints || []).map((k, i) => `${i+1}. ${k}`).join('\n'),
+      '',
+      'HIGHLIGHTS',
+      (t?.highlights || []).map(h => `[${h.speaker}]\n"${h.quote}"\n→ ${h.context}`).join('\n\n'),
+      '',
+      'TRANSCRIPT',
+      analysisData.translatedTranscript || '(not included)',
+    ].join('\n');
+
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'meeting-analysis.txt';
+    a.click(); URL.revokeObjectURL(url);
+  }
+
+  function resetApp() {
+    analysisData = null;
+    selectedFile = null;
+    fileInput.value = '';
+    document.getElementById('file-info').classList.remove('visible');
+    document.getElementById('process-btn').disabled = true;
+    document.getElementById('upload-card').style.opacity = '1';
+    document.getElementById('upload-card').style.pointerEvents = 'auto';
+    document.getElementById('progress-card').classList.remove('visible');
+    document.getElementById('results-card').classList.remove('visible');
+    ['upload','transcribe','analyze'].forEach(s => setStep(s, ''));
+    document.getElementById('transcript-body').classList.remove('visible');
+    document.getElementById('transcript-arrow').classList.remove('open');
+  }
+
+  function escHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>
