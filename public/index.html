@@ -3,704 +3,543 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Meeting Translator</title>
+<title>Meeting Lens</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg: #0f1117;
-  --surface: #1a1d27;
-  --surface2: #22263a;
-  --border: #2e3354;
-  --accent: #6c63ff;
-  --accent2: #a78bfa;
-  --text: #e8eaf6;
-  --muted: #8b8fa8;
-  --red: #ef4444;
-  --green: #22c55e;
-  --gold: #f59e0b;
-  --radius: 12px;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0a0a0f;
+  --s1:#111118;
+  --s2:#18181f;
+  --s3:#1e1e28;
+  --border:#2a2a38;
+  --border2:#333344;
+  --accent:#635bff;
+  --accent-soft:rgba(99,91,255,0.12);
+  --accent-border:rgba(99,91,255,0.35);
+  --text:#f0f0f8;
+  --text2:#a8a8c0;
+  --text3:#6a6a88;
+  --green:#22c55e;
+  --green-soft:rgba(34,197,94,0.1);
+  --gold:#f59e0b;
+  --red:#ef4444;
+  --r:10px;
+  --r-sm:6px;
 }
-body {
-  font-family: 'Inter', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 2rem 1rem 5rem;
-}
-.container { width: 100%; max-width: 860px; }
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:3rem 1rem 6rem;}
+.wrap{width:100%;max-width:880px;}
 
 /* Header */
-.header { text-align: center; margin-bottom: 2.5rem; }
-.header-badge {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: rgba(108,99,255,0.15); border: 1px solid rgba(108,99,255,0.3);
-  color: var(--accent2); font-size: 11px; font-weight: 600;
-  letter-spacing: 0.1em; text-transform: uppercase;
-  padding: 4px 12px; border-radius: 99px; margin-bottom: 16px;
-}
-h1 { font-size: clamp(1.8rem, 5vw, 2.6rem); font-weight: 700; line-height: 1.15; margin-bottom: 10px; }
-h1 span { background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.header p { color: var(--muted); font-size: 15px; }
+.hd{text-align:center;margin-bottom:3rem;}
+.hd-pill{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);border:1px solid var(--accent-border);color:#a5a1ff;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;padding:5px 14px;border-radius:99px;margin-bottom:20px;}
+.hd h1{font-size:clamp(2rem,5vw,3rem);font-weight:700;letter-spacing:-0.03em;line-height:1.1;margin-bottom:12px;}
+.hd h1 em{font-style:normal;color:var(--accent);}
+.hd p{color:var(--text2);font-size:15px;max-width:480px;margin:0 auto;line-height:1.6;}
 
-/* Card */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.5rem;
-  margin-bottom: 1.2rem;
-}
+/* Panel */
+.panel{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:1rem;}
+.panel-head{padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.panel-head h2{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.07em;}
+.panel-body{padding:1.25rem;}
 
-/* Upload zone */
-.upload-zone {
-  border: 2px dashed var(--border);
-  border-radius: var(--radius);
-  padding: 3rem 1.5rem;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  position: relative;
-}
-.upload-zone:hover, .upload-zone.drag-over {
-  border-color: var(--accent);
-  background: rgba(108,99,255,0.05);
-}
-.upload-zone input[type=file] {
-  position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
-}
-.upload-icon { font-size: 2.5rem; margin-bottom: 12px; }
-.upload-zone h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
-.upload-zone p { font-size: 13px; color: var(--muted); }
-.file-types { font-size: 11px; color: var(--muted); margin-top: 8px; background: var(--surface2); display: inline-block; padding: 3px 10px; border-radius: 99px; }
+/* Upload */
+.drop{border:1.5px dashed var(--border2);border-radius:var(--r-sm);padding:2.5rem 1rem;text-align:center;cursor:pointer;position:relative;transition:all 0.2s;}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft);}
+.drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.drop-icon{font-size:2rem;margin-bottom:10px;}
+.drop h3{font-size:15px;font-weight:600;margin-bottom:4px;}
+.drop p{font-size:13px;color:var(--text2);}
+.drop-types{margin-top:10px;display:inline-flex;gap:4px;flex-wrap:wrap;justify-content:center;}
+.drop-types span{font-size:10px;font-weight:600;letter-spacing:0.05em;color:var(--text3);background:var(--s3);padding:3px 8px;border-radius:4px;}
 
-/* File selected state */
-.file-info {
-  display: none; align-items: center; gap: 12px;
-  background: var(--surface2); border-radius: 8px; padding: 12px 16px;
-  margin-top: 12px;
-}
-.file-info.visible { display: flex; }
-.file-icon { font-size: 1.5rem; }
-.file-details { flex: 1; }
-.file-name { font-size: 14px; font-weight: 500; }
-.file-size { font-size: 12px; color: var(--muted); }
-.file-remove { font-size: 18px; cursor: pointer; color: var(--muted); transition: color 0.15s; background: none; border: none; }
-.file-remove:hover { color: var(--red); }
+/* File selected */
+.file-bar{display:none;align-items:center;gap:12px;background:var(--s2);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 16px;margin-top:12px;}
+.file-bar.on{display:flex;}
+.file-bar .ico{font-size:1.4rem;flex-shrink:0;}
+.file-bar .info{flex:1;}
+.file-bar .fname{font-size:13px;font-weight:500;}
+.file-bar .fsize{font-size:11px;color:var(--text2);margin-top:2px;}
+.file-bar .rm{background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:0 4px;line-height:1;transition:color 0.15s;}
+.file-bar .rm:hover{color:var(--red);}
 
-/* Controls */
-.controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-top: 1.2rem; }
-.control-group { display: flex; flex-direction: column; gap: 6px; }
-.control-group label { font-size: 12px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; }
-select {
-  background: var(--surface2); border: 1px solid var(--border); color: var(--text);
-  font-family: 'Inter', sans-serif; font-size: 14px;
-  padding: 10px 14px; border-radius: 8px; outline: none; cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238b8fa8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 12px center;
-  padding-right: 32px;
-}
-select:focus { border-color: var(--accent); }
+/* Controls row */
+.ctrl-row{display:flex;gap:12px;align-items:flex-end;margin-top:1.25rem;flex-wrap:wrap;}
+.ctrl-grp{display:flex;flex-direction:column;gap:6px;}
+.ctrl-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text3);}
+select{background:var(--s2);border:1px solid var(--border2);color:var(--text);font-family:'Inter',sans-serif;font-size:13px;font-weight:500;padding:9px 36px 9px 12px;border-radius:var(--r-sm);outline:none;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%236a6a88' d='M5 6L0 0h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;transition:border-color 0.15s;}
+select:focus{border-color:var(--accent);}
 
-.toggle-row { display: flex; align-items: center; gap: 10px; }
-.toggle { position: relative; width: 42px; height: 24px; }
-.toggle input { opacity: 0; width: 0; height: 0; }
-.toggle-slider {
-  position: absolute; inset: 0; background: var(--surface2);
-  border: 1px solid var(--border); border-radius: 99px; cursor: pointer; transition: 0.2s;
-}
-.toggle-slider:before {
-  content: ''; position: absolute; width: 16px; height: 16px;
-  left: 3px; top: 3px; background: var(--muted); border-radius: 50%; transition: 0.2s;
-}
-.toggle input:checked + .toggle-slider { background: var(--accent); border-color: var(--accent); }
-.toggle input:checked + .toggle-slider:before { transform: translateX(18px); background: white; }
-.toggle-label { font-size: 13px; color: var(--muted); }
+/* Toggle */
+.tog-row{display:flex;align-items:center;gap:8px;}
+.tog{position:relative;width:38px;height:22px;flex-shrink:0;}
+.tog input{opacity:0;width:0;height:0;}
+.tog-sl{position:absolute;inset:0;background:var(--s3);border:1px solid var(--border2);border-radius:99px;cursor:pointer;transition:0.2s;}
+.tog-sl::before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:var(--text3);border-radius:50%;transition:0.2s;}
+.tog input:checked+.tog-sl{background:var(--accent);border-color:var(--accent);}
+.tog input:checked+.tog-sl::before{transform:translateX(16px);background:#fff;}
+.tog-lbl{font-size:13px;color:var(--text2);}
 
-/* Process button */
-.process-btn {
-  margin-left: auto;
-  background: linear-gradient(135deg, var(--accent), #8b5cf6);
-  color: white; border: none; border-radius: 8px;
-  font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600;
-  padding: 11px 28px; cursor: pointer; transition: all 0.2s;
-  display: flex; align-items: center; gap: 8px;
-}
-.process-btn:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(108,99,255,0.4); }
-.process-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+/* Go button */
+.go{margin-left:auto;background:var(--accent);color:#fff;border:none;border-radius:var(--r-sm);font-family:'Inter',sans-serif;font-size:14px;font-weight:600;padding:10px 24px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all 0.2s;letter-spacing:-0.01em;}
+.go:hover:not(:disabled){background:#7a74ff;box-shadow:0 0 24px rgba(99,91,255,0.35);}
+.go:disabled{opacity:0.35;cursor:not-allowed;}
+.go:active:not(:disabled){transform:scale(0.98);}
 
 /* Progress */
-.progress-card { display: none; }
-.progress-card.visible { display: block; }
-.progress-steps { display: flex; flex-direction: column; gap: 12px; }
-.step {
-  display: flex; align-items: center; gap: 14px;
-  padding: 12px 16px; border-radius: 8px;
-  background: var(--surface2); transition: all 0.3s;
-}
-.step.active { background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.3); }
-.step.done { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); }
-.step.error { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); }
-.step-icon { font-size: 1.3rem; width: 28px; text-align: center; flex-shrink: 0; }
-.step-text { flex: 1; }
-.step-title { font-size: 14px; font-weight: 500; }
-.step-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
-.step-status { font-size: 18px; flex-shrink: 0; }
-.spinner-sm {
-  width: 18px; height: 18px; border: 2px solid rgba(108,99,255,0.3);
-  border-top-color: var(--accent); border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
+.steps{display:flex;flex-direction:column;gap:6px;}
+.step{display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:var(--r-sm);background:var(--s2);border:1px solid var(--border);transition:all 0.3s;}
+.step.active{background:rgba(99,91,255,0.08);border-color:var(--accent-border);}
+.step.done{background:var(--green-soft);border-color:rgba(34,197,94,0.25);}
+.step.err{background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.25);}
+.step-ic{font-size:1.1rem;width:22px;text-align:center;flex-shrink:0;}
+.step-txt{flex:1;}
+.step-title{font-size:13px;font-weight:500;}
+.step-desc{font-size:11px;color:var(--text2);margin-top:2px;}
+.step-st{font-size:14px;flex-shrink:0;width:20px;text-align:center;}
+.spin{width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
 
 /* Results */
-.results-card { display: none; }
-.results-card.visible { display: block; }
-
 /* Speakers */
-.speakers-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 1.2rem; }
-.speaker-chip {
-  display: flex; align-items: center; gap: 8px;
-  background: var(--surface2); border: 1px solid var(--border);
-  border-radius: 8px; padding: 8px 14px;
-}
-.speaker-avatar {
-  width: 30px; height: 30px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 700; color: white; flex-shrink: 0;
-}
-.speaker-info .speaker-name { font-size: 13px; font-weight: 600; }
-.speaker-info .speaker-role { font-size: 11px; color: var(--muted); }
+.sp-row{display:flex;flex-wrap:wrap;gap:8px;padding:1rem 1.25rem;border-bottom:1px solid var(--border);}
+.sp-chip{display:flex;align-items:center;gap:9px;background:var(--s2);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 14px;transition:border-color 0.15s;}
+.sp-chip:hover{border-color:var(--border2);}
+.sp-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}
+.sp-name{font-size:13px;font-weight:600;}
+.sp-role{font-size:11px;color:var(--text2);margin-top:1px;}
 
 /* Tabs */
-.tabs { display: flex; gap: 4px; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0; }
-.tab-btn {
-  font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500;
-  padding: 10px 18px; background: none; border: none; color: var(--muted);
-  cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
-  transition: all 0.15s;
-}
-.tab-btn:hover { color: var(--text); }
-.tab-btn.active { color: var(--accent2); border-bottom-color: var(--accent); }
-.tab-content { display: none; padding-top: 1rem; }
-.tab-content.active { display: block; }
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 1.25rem;}
+.tab{font-family:'Inter',sans-serif;font-size:13px;font-weight:500;padding:12px 16px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text2);cursor:pointer;margin-bottom:-1px;transition:all 0.15s;letter-spacing:-0.01em;}
+.tab:hover{color:var(--text);}
+.tab.on{color:var(--text);border-bottom-color:var(--accent);}
+.tab-pane{display:none;padding:1.25rem;}
+.tab-pane.on{display:block;}
 
-/* Summary */
-.summary-text { font-size: 15px; line-height: 1.8; color: var(--text); }
+/* Summary bullets */
+.bul-list{display:flex;flex-direction:column;gap:14px;}
+.bul-item{}
+.bul-main{display:flex;align-items:flex-start;gap:10px;font-size:14px;font-weight:500;color:var(--text);line-height:1.5;margin-bottom:6px;}
+.bul-main::before{content:'●';color:var(--accent);font-size:8px;margin-top:5px;flex-shrink:0;}
+.bul-subs{display:flex;flex-direction:column;gap:4px;padding-left:18px;}
+.bul-sub{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--text2);line-height:1.6;}
+.bul-sub::before{content:'–';color:var(--text3);flex-shrink:0;}
 
 /* Chapters */
-.chapter { margin-bottom: 1.2rem; padding-bottom: 1.2rem; border-bottom: 1px solid var(--border); }
-.chapter:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-.chapter-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-.chapter-num {
-  width: 26px; height: 26px; border-radius: 6px;
-  background: rgba(108,99,255,0.2); color: var(--accent2);
-  font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.chapter-title { font-size: 14px; font-weight: 600; }
-.chapter-time { font-size: 11px; color: var(--muted); background: var(--surface2); padding: 2px 8px; border-radius: 99px; margin-left: auto; }
-.chapter-body { font-size: 13px; color: var(--muted); line-height: 1.7; padding-left: 36px; }
-
-/* Key Points */
-.key-points { list-style: none; display: flex; flex-direction: column; gap: 8px; }
-.key-point {
-  display: flex; align-items: flex-start; gap: 10px;
-  background: var(--surface2); border-radius: 8px; padding: 12px 14px;
-  font-size: 14px; line-height: 1.6;
-}
-.key-point::before {
-  content: '→'; color: var(--accent2); font-weight: 700;
-  flex-shrink: 0; margin-top: 1px;
-}
+.ch-list{display:flex;flex-direction:column;gap:0;}
+.ch{padding:14px 0;border-bottom:1px solid var(--border);}
+.ch:last-child{border-bottom:none;padding-bottom:0;}
+.ch-hd{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.ch-n{width:22px;height:22px;border-radius:5px;background:var(--s3);border:1px solid var(--border2);font-size:10px;font-weight:700;color:var(--text2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ch-title{font-size:13px;font-weight:600;}
+.ch-time{margin-left:auto;font-size:11px;color:var(--text3);background:var(--s3);padding:2px 8px;border-radius:4px;white-space:nowrap;}
+.ch-body{font-size:13px;color:var(--text2);line-height:1.7;padding-left:32px;}
 
 /* Highlights */
-.highlights { display: flex; flex-direction: column; gap: 10px; }
-.highlight {
-  background: var(--surface2); border-left: 3px solid var(--accent);
-  border-radius: 0 8px 8px 0; padding: 14px 16px;
-}
-.highlight-speaker {
-  font-size: 11px; font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.08em; color: var(--accent2); margin-bottom: 6px;
-}
-.highlight-quote { font-size: 14px; font-style: italic; line-height: 1.6; margin-bottom: 6px; }
-.highlight-context { font-size: 12px; color: var(--muted); }
+.hl-list{display:flex;flex-direction:column;gap:10px;}
+.hl{background:var(--s2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:0 var(--r-sm) var(--r-sm) 0;padding:14px 16px;}
+.hl-sp{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:6px;}
+.hl-q{font-size:14px;font-style:italic;line-height:1.6;margin-bottom:6px;}
+.hl-ctx{font-size:12px;color:var(--text2);line-height:1.5;}
 
-/* Transcript */
-.transcript-toggle {
-  display: flex; align-items: center; justify-content: space-between;
-  cursor: pointer; user-select: none; padding: 4px 0;
-}
-.transcript-toggle h3 { font-size: 14px; font-weight: 600; }
-.transcript-arrow { font-size: 12px; color: var(--muted); transition: transform 0.2s; }
-.transcript-arrow.open { transform: rotate(180deg); }
-.transcript-body {
-  display: none; margin-top: 1rem;
-  background: var(--surface2); border-radius: 8px; padding: 16px;
-  max-height: 400px; overflow-y: auto;
-}
-.transcript-body.visible { display: block; }
-.transcript-line { font-size: 13px; line-height: 1.9; color: var(--muted); }
-.transcript-line strong { color: var(--text); }
+/* Transcript section */
+.tr-wrap{border-top:1px solid var(--border);padding:1rem 1.25rem;}
+.tr-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0;}
+.tr-header h3{font-size:13px;font-weight:600;color:var(--text2);}
+.tr-lang-tabs{display:flex;gap:4px;}
+.tr-lang-btn{font-family:'Inter',sans-serif;font-size:11px;font-weight:600;padding:5px 12px;border-radius:var(--r-sm);border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;transition:all 0.15s;letter-spacing:0.03em;}
+.tr-lang-btn:hover{color:var(--text2);border-color:var(--border2);}
+.tr-lang-btn.on{background:var(--s3);border-color:var(--border2);color:var(--text);}
+.tr-toggle-btn{font-family:'Inter',sans-serif;font-size:11px;font-weight:500;padding:5px 12px;border-radius:var(--r-sm);border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:5px;}
+.tr-toggle-btn:hover{color:var(--text2);}
+.tr-body{display:none;margin-top:12px;background:var(--s2);border:1px solid var(--border);border-radius:var(--r-sm);padding:16px;max-height:360px;overflow-y:auto;}
+.tr-body.on{display:block;}
+.tr-line{font-size:13px;line-height:2;color:var(--text2);}
+.tr-line strong{color:var(--text);font-weight:500;}
+.tr-line.jp-line{color:var(--text3);font-size:12px;line-height:1.6;}
+.tr-sep{height:8px;}
 
-/* Action bar */
-.action-bar { display: flex; gap: 8px; margin-top: 1rem; flex-wrap: wrap; }
-.action-btn {
-  font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500;
-  padding: 8px 16px; border-radius: 8px; cursor: pointer;
-  border: 1px solid var(--border); background: var(--surface2);
-  color: var(--text); transition: all 0.15s;
-  display: flex; align-items: center; gap: 6px;
-}
-.action-btn:hover { border-color: var(--accent); color: var(--accent2); }
-.action-btn.copied { border-color: var(--green); color: var(--green); }
+/* Actions */
+.act-bar{display:flex;gap:8px;margin-top:1rem;flex-wrap:wrap;padding:0 1.25rem 1.25rem;}
+.act-btn{font-family:'Inter',sans-serif;font-size:12px;font-weight:500;padding:8px 16px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--s2);color:var(--text2);cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:6px;letter-spacing:-0.01em;}
+.act-btn:hover{border-color:var(--border2);color:var(--text);}
+.act-btn.ok{border-color:rgba(34,197,94,0.4);color:var(--green);}
+.reset{display:block;font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:var(--text3);background:none;border:none;cursor:pointer;padding:0.75rem 1.25rem;transition:color 0.15s;text-align:left;}
+.reset:hover{color:var(--text2);}
 
-/* New meeting btn */
-.new-btn {
-  font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500;
-  padding: 9px 20px; border-radius: 8px; cursor: pointer;
-  border: 1px solid var(--border); background: transparent;
-  color: var(--muted); transition: all 0.15s; margin-top: 1rem;
-}
-.new-btn:hover { color: var(--text); border-color: var(--text); }
+/* Err */
+.err{font-size:13px;color:#fca5a5;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:var(--r-sm);padding:10px 14px;margin-top:10px;display:none;}
+.err.on{display:block;}
 
-@media (max-width: 600px) {
-  .controls { flex-direction: column; }
-  .process-btn { margin-left: 0; width: 100%; justify-content: center; }
-  .tabs { overflow-x: auto; }
+@media(max-width:600px){
+  .ctrl-row{flex-direction:column;}
+  .go{margin-left:0;width:100%;justify-content:center;}
+  .tabs{overflow-x:auto;}
+  .tr-header{flex-wrap:wrap;gap:8px;}
 }
 </style>
 </head>
 <body>
-<div class="container">
+<div class="wrap">
 
-  <!-- Header -->
-  <div class="header">
-    <div class="header-badge">🎙️ AI Meeting Translator</div>
-    <h1>Turn Japanese meetings into<br><span>clear, structured insights</span></h1>
-    <p>Upload audio → get transcript, summary, key points & highlights in your language</p>
-  </div>
+<div class="hd">
+  <div class="hd-pill">🎙 Meeting Lens</div>
+  <h1>Japanese meetings,<br><em>crystal clear.</em></h1>
+  <p>Upload audio and get a full transcript, structured summary, key points and highlights — in your language.</p>
+</div>
 
-  <!-- Upload Card -->
-  <div class="card" id="upload-card">
-    <div class="upload-zone" id="upload-zone">
-      <input type="file" id="file-input" accept="audio/*,video/*,.mp3,.mp4,.wav,.m4a,.ogg,.webm,.mov" />
-      <div class="upload-icon">🎵</div>
+<!-- Upload panel -->
+<div class="panel" id="up-panel">
+  <div class="panel-head"><h2>Upload</h2></div>
+  <div class="panel-body">
+    <div class="drop" id="drop">
+      <input type="file" id="file-in" accept="audio/*,video/*,.mp3,.mp4,.wav,.m4a,.ogg,.webm,.mov" />
+      <div class="drop-icon">🎵</div>
       <h3>Drop your meeting audio here</h3>
-      <p>or click to browse files</p>
-      <div class="file-types">MP3 · MP4 · WAV · M4A · OGG · WEBM · MOV</div>
-    </div>
-
-    <div class="file-info" id="file-info">
-      <div class="file-icon">🎙️</div>
-      <div class="file-details">
-        <div class="file-name" id="file-name">—</div>
-        <div class="file-size" id="file-size">—</div>
+      <p>or click to browse</p>
+      <div class="drop-types">
+        <span>MP3</span><span>MP4</span><span>WAV</span><span>M4A</span><span>OGG</span><span>WEBM</span><span>MOV</span>
       </div>
-      <button class="file-remove" onclick="removeFile()">✕</button>
     </div>
-
-    <div class="controls">
-      <div class="control-group">
-        <label>Output Language</label>
-        <select id="lang-select">
+    <div class="file-bar" id="file-bar">
+      <div class="ico">🎙</div>
+      <div class="info">
+        <div class="fname" id="fname"></div>
+        <div class="fsize" id="fsize"></div>
+      </div>
+      <button class="rm" onclick="rmFile()">✕</button>
+    </div>
+    <div class="err" id="err"></div>
+    <div class="ctrl-row">
+      <div class="ctrl-grp">
+        <div class="ctrl-lbl">Output language</div>
+        <select id="lang">
           <option value="id">🇮🇩 Indonesian</option>
           <option value="en">🇬🇧 English</option>
           <option value="both">🇮🇩 + 🇬🇧 Both</option>
         </select>
       </div>
-      <div class="control-group">
-        <label>Show Transcript</label>
-        <div class="toggle-row">
-          <label class="toggle">
-            <input type="checkbox" id="show-transcript" checked />
-            <span class="toggle-slider"></span>
-          </label>
-          <span class="toggle-label">Include full transcript</span>
+      <div class="ctrl-grp">
+        <div class="ctrl-lbl">Transcript</div>
+        <div class="tog-row">
+          <label class="tog"><input type="checkbox" id="show-tr" checked/><span class="tog-sl"></span></label>
+          <span class="tog-lbl">Include transcript</span>
         </div>
       </div>
-      <button class="process-btn" id="process-btn" onclick="processAudio()" disabled>
-        <span>✦</span> Analyze Meeting
+      <button class="go" id="go-btn" onclick="run()" disabled>
+        <span style="font-size:16px;">✦</span> Analyze Meeting
       </button>
     </div>
   </div>
+</div>
 
-  <!-- Progress Card -->
-  <div class="card progress-card" id="progress-card">
-    <div class="progress-steps">
-      <div class="step" id="step-upload">
-        <div class="step-icon">📤</div>
-        <div class="step-text">
-          <div class="step-title">Uploading audio</div>
-          <div class="step-desc">Sending file to transcription engine</div>
-        </div>
-        <div class="step-status" id="step-upload-status">⏳</div>
-      </div>
-      <div class="step" id="step-transcribe">
-        <div class="step-icon">🎙️</div>
-        <div class="step-text">
-          <div class="step-title">Transcribing Japanese audio</div>
-          <div class="step-desc">Whisper AI is converting speech to text</div>
-        </div>
-        <div class="step-status" id="step-transcribe-status">⏳</div>
-      </div>
-      <div class="step" id="step-analyze">
-        <div class="step-icon">🧠</div>
-        <div class="step-text">
-          <div class="step-title">Translating & analyzing</div>
-          <div class="step-desc">Identifying speakers, summarizing, extracting insights</div>
-        </div>
-        <div class="step-status" id="step-analyze-status">⏳</div>
-      </div>
+<!-- Progress panel -->
+<div class="panel" id="prog-panel" style="display:none;">
+  <div class="panel-head"><h2>Processing</h2></div>
+  <div class="panel-body">
+    <div class="steps">
+      <div class="step" id="s-read"><div class="step-ic">📤</div><div class="step-txt"><div class="step-title">Reading file</div><div class="step-desc">Preparing audio for upload</div></div><div class="step-st" id="ss-read">–</div></div>
+      <div class="step" id="s-tr"><div class="step-ic">🎙</div><div class="step-txt"><div class="step-title">Transcribing Japanese audio</div><div class="step-desc">Whisper AI — speech to text</div></div><div class="step-st" id="ss-tr">–</div></div>
+      <div class="step" id="s-an"><div class="step-ic">🧠</div><div class="step-txt"><div class="step-title">Translating & analyzing</div><div class="step-desc">Identifying speakers, building insights</div></div><div class="step-st" id="ss-an">–</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Results panel -->
+<div class="panel" id="res-panel" style="display:none;">
+  <!-- Speakers -->
+  <div class="sp-row" id="sp-row"></div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab on" onclick="stab('summary',this)">Summary</button>
+    <button class="tab" onclick="stab('keypoints',this)">Key Points</button>
+    <button class="tab" onclick="stab('highlights',this)">Highlights</button>
+  </div>
+
+  <div class="tab-pane on" id="tp-summary">
+    <div class="bul-list" id="sum-list"></div>
+    <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--border);">
+      <div class="ctrl-lbl" style="margin-bottom:12px;">Chapters</div>
+      <div class="ch-list" id="ch-list"></div>
     </div>
   </div>
 
-  <!-- Results Card -->
-  <div class="card results-card" id="results-card">
-
-    <!-- Speakers -->
-    <div style="margin-bottom: 1.4rem;">
-      <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 10px;">Participants</div>
-      <div class="speakers-grid" id="speakers-grid"></div>
-    </div>
-
-    <!-- Tabs -->
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('summary', this)">Summary</button>
-      <button class="tab-btn" onclick="switchTab('keypoints', this)">Key Points</button>
-      <button class="tab-btn" onclick="switchTab('highlights', this)">Highlights</button>
-    </div>
-
-    <div class="tab-content active" id="tab-summary">
-      <div class="summary-text" id="summary-text"></div>
-      <div style="margin-top: 1.4rem; border-top: 1px solid var(--border); padding-top: 1.2rem;">
-        <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 12px;">Meeting Chapters</div>
-        <div id="chapters-list"></div>
-      </div>
-    </div>
-
-    <div class="tab-content" id="tab-keypoints">
-      <ul class="key-points" id="keypoints-list"></ul>
-    </div>
-
-    <div class="tab-content" id="tab-highlights">
-      <div class="highlights" id="highlights-list"></div>
-    </div>
-
-    <!-- Transcript -->
-    <div style="margin-top: 1.4rem; border-top: 1px solid var(--border); padding-top: 1.2rem;" id="transcript-section">
-      <div class="transcript-toggle" onclick="toggleTranscript()">
-        <h3>📄 Full Translated Transcript</h3>
-        <span class="transcript-arrow" id="transcript-arrow">▼</span>
-      </div>
-      <div class="transcript-body" id="transcript-body"></div>
-    </div>
-
-    <!-- Actions -->
-    <div class="action-bar">
-      <button class="action-btn" onclick="copyResults()">📋 Copy Summary</button>
-      <button class="action-btn" onclick="downloadResults()">⬇ Download .txt</button>
-    </div>
-
-    <button class="new-btn" onclick="resetApp()">← Analyze another meeting</button>
+  <div class="tab-pane" id="tp-keypoints">
+    <div class="bul-list" id="kp-list"></div>
   </div>
+
+  <div class="tab-pane" id="tp-highlights">
+    <div class="hl-list" id="hl-list"></div>
+  </div>
+
+  <!-- Transcript -->
+  <div class="tr-wrap" id="tr-wrap" style="display:none;">
+    <div class="tr-header">
+      <h3>Transcript</h3>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+        <div class="tr-lang-tabs" id="tr-lang-tabs">
+          <button class="tr-lang-btn on" data-lang="translated" onclick="setTrLang('translated',this)">Translated</button>
+          <button class="tr-lang-btn" data-lang="ja" onclick="setTrLang('ja',this)">Japanese</button>
+          <button class="tr-lang-btn" data-lang="both" onclick="setTrLang('both',this)">Side by side</button>
+        </div>
+        <button class="tr-toggle-btn" onclick="togTr()" id="tr-tog-btn">Show ▾</button>
+      </div>
+    </div>
+    <div class="tr-body" id="tr-body"></div>
+  </div>
+
+  <!-- Actions -->
+  <div class="act-bar">
+    <button class="act-btn" id="copy-btn" onclick="copySummary()">📋 Copy summary</button>
+    <button class="act-btn" onclick="dlTxt()">⬇ Download .txt</button>
+  </div>
+  <button class="reset" onclick="resetApp()">← Analyze another meeting</button>
+</div>
 
 </div>
 
 <script>
-  let selectedFile = null;
-  let analysisData = null;
-  const COLORS = ['#6c63ff','#ec4899','#f59e0b','#22c55e','#06b6d4','#f97316'];
+let file=null, data=null, trLang='translated';
+const COLORS=['#635bff','#ec4899','#f59e0b','#22c55e','#06b6d4','#f97316'];
 
-  // File handling
-  const fileInput = document.getElementById('file-input');
-  const uploadZone = document.getElementById('upload-zone');
+// File pick
+document.getElementById('file-in').addEventListener('change',e=>{if(e.target.files[0])pick(e.target.files[0]);});
+const drop=document.getElementById('drop');
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('over');});
+drop.addEventListener('dragleave',()=>drop.classList.remove('over'));
+drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('over');if(e.dataTransfer.files[0])pick(e.dataTransfer.files[0]);});
 
-  fileInput.addEventListener('change', e => {
-    if (e.target.files[0]) handleFile(e.target.files[0]);
+function pick(f){
+  file=f;
+  document.getElementById('fname').textContent=f.name;
+  document.getElementById('fsize').textContent=f.size<1048576?(f.size/1024).toFixed(1)+' KB':(f.size/1048576).toFixed(1)+' MB';
+  document.getElementById('file-bar').classList.add('on');
+  document.getElementById('go-btn').disabled=false;
+  document.getElementById('err').classList.remove('on');
+}
+function rmFile(){file=null;document.getElementById('file-bar').classList.remove('on');document.getElementById('file-in').value='';document.getElementById('go-btn').disabled=true;}
+
+// Steps
+function setStep(id,state){
+  const s=document.getElementById('s-'+id);
+  const ss=document.getElementById('ss-'+id);
+  s.className='step'+(state?' '+state:'');
+  if(state==='active')ss.innerHTML='<div class="spin"></div>';
+  else if(state==='done')ss.textContent='✓';
+  else if(state==='err')ss.textContent='✗';
+  else ss.textContent='–';
+}
+
+function showErr(msg){const e=document.getElementById('err');e.textContent=msg;e.classList.add('on');}
+
+async function run(){
+  if(!file)return;
+  const key=null; // key comes from server env
+  const lang=document.getElementById('lang').value;
+  document.getElementById('err').classList.remove('on');
+  document.getElementById('up-panel').style.opacity='0.45';
+  document.getElementById('up-panel').style.pointerEvents='none';
+  document.getElementById('prog-panel').style.display='block';
+  document.getElementById('go-btn').disabled=true;
+
+  try{
+    setStep('read','active');
+    const b64=await toB64(file);
+    setStep('read','done');
+
+    setStep('tr','active');
+    const trRes=await fetch('/api/transcribe',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({audio:b64,filename:file.name,mimeType:file.type||'audio/mpeg'})
+    });
+    const trData=await trRes.json();
+    if(trData.error)throw new Error(trData.error);
+    setStep('tr','done');
+
+    setStep('an','active');
+    const anRes=await fetch('/api/analyze',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({transcript:trData.transcript,language:lang})
+    });
+    const anData=await anRes.json();
+    if(anData.error)throw new Error(anData.error);
+    setStep('an','done');
+
+    data=anData;
+    render(anData,document.getElementById('show-tr').checked,lang);
+  }catch(e){
+    ['read','tr','an'].forEach(id=>{if(document.getElementById('s-'+id).className.includes('active'))setStep(id,'err');});
+    showErr('Error: '+e.message);
+    document.getElementById('up-panel').style.opacity='1';
+    document.getElementById('up-panel').style.pointerEvents='auto';
+    document.getElementById('go-btn').disabled=false;
+  }
+}
+
+function toB64(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(f);});}
+
+function render(d, showTr, lang){
+  document.getElementById('prog-panel').style.display='none';
+  document.getElementById('res-panel').style.display='block';
+
+  // Speakers
+  const sg=document.getElementById('sp-row');
+  sg.innerHTML=(d.speakers||[]).map((sp,i)=>{
+    const c=COLORS[i%COLORS.length];
+    const init=(sp.name||sp.label||'?').charAt(0).toUpperCase();
+    return `<div class="sp-chip"><div class="sp-av" style="background:${c}">${init}</div><div><div class="sp-name">${esc(sp.name||sp.label)}</div><div class="sp-role">${esc(sp.role||'Participant')}</div></div></div>`;
+  }).join('');
+
+  // Summary bullets
+  const sl=document.getElementById('sum-list');
+  const sumArr=Array.isArray(d.tabs?.summary)?d.tabs.summary:[{point:d.tabs?.summary||'',subPoints:[]}];
+  sl.innerHTML=sumArr.map(b=>`
+    <div class="bul-item">
+      <div class="bul-main">${esc(b.point)}</div>
+      <div class="bul-subs">${(b.subPoints||[]).map(s=>`<div class="bul-sub">${esc(s)}</div>`).join('')}</div>
+    </div>`).join('');
+
+  // Chapters
+  const cl=document.getElementById('ch-list');
+  cl.innerHTML=(d.chapters||[]).map((c,i)=>`
+    <div class="ch">
+      <div class="ch-hd">
+        <div class="ch-n">${i+1}</div>
+        <div class="ch-title">${esc(c.title)}</div>
+        ${c.timestamp?`<div class="ch-time">⏱ ${esc(c.timestamp)}</div>`:''}
+      </div>
+      <div class="ch-body">${esc(c.summary)}</div>
+    </div>`).join('');
+
+  // Key points
+  const kl=document.getElementById('kp-list');
+  const kpArr=Array.isArray(d.tabs?.keyPoints)?d.tabs.keyPoints:[];
+  kl.innerHTML=kpArr.map(k=>{
+    if(typeof k==='string')return `<div class="bul-item"><div class="bul-main">${esc(k)}</div></div>`;
+    return `<div class="bul-item"><div class="bul-main">${esc(k.point)}</div><div class="bul-subs">${(k.subPoints||[]).map(s=>`<div class="bul-sub">${esc(s)}</div>`).join('')}</div></div>`;
+  }).join('');
+
+  // Highlights
+  const hl=document.getElementById('hl-list');
+  hl.innerHTML=(d.tabs?.highlights||[]).map(h=>`
+    <div class="hl">
+      <div class="hl-sp">${esc(h.speaker)}</div>
+      <div class="hl-q">"${esc(h.quote)}"</div>
+      <div class="hl-ctx">${esc(h.context)}</div>
+    </div>`).join('');
+
+  // Transcript
+  if(showTr && d.transcripts){
+    document.getElementById('tr-wrap').style.display='block';
+    renderTr('translated');
+  } else {
+    document.getElementById('tr-wrap').style.display='none';
+  }
+}
+
+function renderTr(lang){
+  trLang=lang;
+  const d_tr=data?.transcripts;
+  if(!d_tr)return;
+  const src=d_tr[lang]||d_tr['translated']||'';
+  const body=document.getElementById('tr-body');
+
+  if(lang==='both'){
+    // Interleaved — lines alternate JP / translated
+    const lines=src.split('\n').filter(l=>l.trim());
+    body.innerHTML=lines.map(l=>{
+      const isJp=l.includes('- JP]:');
+      const m=l.match(/^\[(.+?)\]:\s*(.+)$/);
+      if(m)return `<div class="tr-line${isJp?' jp-line':''}">${isJp?'':'<strong>'}${esc(m[1])}:${isJp?'':'</strong>'} ${esc(m[2])}</div>`;
+      return `<div class="tr-line${isJp?' jp-line':''}">${esc(l)}</div>`;
+    }).join('');
+  } else {
+    const lines=src.split('\n').filter(l=>l.trim());
+    body.innerHTML=lines.map(l=>{
+      const m=l.match(/^\[(.+?)\]:\s*(.+)$/);
+      return m?`<div class="tr-line"><strong>${esc(m[1])}:</strong> ${esc(m[2])}</div>`:`<div class="tr-line">${esc(l)}</div>`;
+    }).join('');
+  }
+}
+
+function setTrLang(lang,el){
+  document.querySelectorAll('.tr-lang-btn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  renderTr(lang);
+  // Auto-show if collapsed
+  const body=document.getElementById('tr-body');
+  if(!body.classList.contains('on')){body.classList.add('on');document.getElementById('tr-tog-btn').textContent='Hide ▴';}
+}
+
+function togTr(){
+  const body=document.getElementById('tr-body');
+  const btn=document.getElementById('tr-tog-btn');
+  body.classList.toggle('on');
+  btn.textContent=body.classList.contains('on')?'Hide ▴':'Show ▾';
+  if(body.classList.contains('on'))renderTr(trLang);
+}
+
+function stab(id,el){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('tp-'+id).classList.add('on');
+}
+
+function copySummary(){
+  if(!data)return;
+  const t=data.tabs;
+  const sumArr=Array.isArray(t?.summary)?t.summary:[{point:t?.summary||'',subPoints:[]}];
+  const sumTxt=sumArr.map(b=>`• ${b.point}\n${(b.subPoints||[]).map(s=>`  – ${s}`).join('\n')}`).join('\n\n');
+  const kpArr=Array.isArray(t?.keyPoints)?t.keyPoints:[];
+  const kpTxt=kpArr.map((k,i)=>{
+    if(typeof k==='string')return `${i+1}. ${k}`;
+    return `${i+1}. ${k.point}\n${(k.subPoints||[]).map(s=>`   – ${s}`).join('\n')}`;
+  }).join('\n\n');
+  const txt=['=== SUMMARY ===',sumTxt,'','=== KEY POINTS ===',kpTxt,'','=== HIGHLIGHTS ===',(t?.highlights||[]).map(h=>`[${h.speaker}] "${h.quote}"\n→ ${h.context}`).join('\n\n')].join('\n');
+  navigator.clipboard.writeText(txt).then(()=>{
+    const btn=document.getElementById('copy-btn');
+    btn.textContent='✓ Copied!';btn.classList.add('ok');
+    setTimeout(()=>{btn.textContent='📋 Copy summary';btn.classList.remove('ok');},2000);
   });
+}
 
-  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
-  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
-  uploadZone.addEventListener('drop', e => {
-    e.preventDefault();
-    uploadZone.classList.remove('drag-over');
-    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
-  });
+function dlTxt(){
+  if(!data)return;
+  const t=data.tabs;
+  const sp=(data.speakers||[]).map(s=>`• ${s.name||s.label}${s.role?' ('+s.role+')':''}: ${s.summary||''}`).join('\n');
+  const sumArr=Array.isArray(t?.summary)?t.summary:[{point:t?.summary||'',subPoints:[]}];
+  const sumTxt=sumArr.map(b=>`• ${b.point}\n${(b.subPoints||[]).map(s=>`  – ${s}`).join('\n')}`).join('\n\n');
+  const kpArr=Array.isArray(t?.keyPoints)?t.keyPoints:[];
+  const kpTxt=kpArr.map((k,i)=>typeof k==='string'?`${i+1}. ${k}`:`${i+1}. ${k.point}\n${(k.subPoints||[]).map(s=>`   – ${s}`).join('\n')}`).join('\n\n');
+  const ch=(data.chapters||[]).map((c,i)=>`Chapter ${i+1}: ${c.title}${c.timestamp?'\nTime: '+c.timestamp:''}\n${c.summary}`).join('\n\n');
+  const txt=['MEETING LENS — ANALYSIS REPORT','================================','','PARTICIPANTS',sp,'','SUMMARY',sumTxt,'','CHAPTERS',ch,'','KEY POINTS',kpTxt,'','HIGHLIGHTS',(t?.highlights||[]).map(h=>`[${h.speaker}]\n"${h.quote}"\n→ ${h.context}`).join('\n\n'),'','TRANSCRIPT',data.transcripts?.translated||'(not included)'].join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));
+  a.download='meeting-lens-report.txt';a.click();
+}
 
-  function handleFile(file) {
-    selectedFile = file;
-    document.getElementById('file-name').textContent = file.name;
-    document.getElementById('file-size').textContent = formatSize(file.size);
-    document.getElementById('file-info').classList.add('visible');
-    document.getElementById('process-btn').disabled = false;
-  }
+function resetApp(){
+  data=null;file=null;trLang='translated';
+  document.getElementById('file-in').value='';
+  document.getElementById('file-bar').classList.remove('on');
+  document.getElementById('go-btn').disabled=true;
+  document.getElementById('up-panel').style.opacity='1';
+  document.getElementById('up-panel').style.pointerEvents='auto';
+  document.getElementById('prog-panel').style.display='none';
+  document.getElementById('res-panel').style.display='none';
+  document.getElementById('err').classList.remove('on');
+  document.getElementById('tr-body').classList.remove('on');
+  document.getElementById('tr-tog-btn').textContent='Show ▾';
+  document.querySelectorAll('.tr-lang-btn').forEach((b,i)=>b.classList.toggle('on',i===0));
+  ['read','tr','an'].forEach(id=>setStep(id,''));
+}
 
-  function removeFile() {
-    selectedFile = null;
-    fileInput.value = '';
-    document.getElementById('file-info').classList.remove('visible');
-    document.getElementById('process-btn').disabled = true;
-  }
-
-  function formatSize(bytes) {
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-  }
-
-  // Step management
-  function setStep(stepId, state) {
-    const step = document.getElementById('step-' + stepId);
-    const status = document.getElementById('step-' + stepId + '-status');
-    step.className = 'step ' + state;
-    if (state === 'active') {
-      status.innerHTML = '<div class="spinner-sm"></div>';
-    } else if (state === 'done') {
-      status.textContent = '✅';
-    } else if (state === 'error') {
-      status.textContent = '❌';
-    } else {
-      status.textContent = '⏳';
-    }
-  }
-
-  async function processAudio() {
-    if (!selectedFile) return;
-
-    const lang = document.getElementById('lang-select').value;
-
-    // Show progress
-    document.getElementById('upload-card').style.opacity = '0.5';
-    document.getElementById('upload-card').style.pointerEvents = 'none';
-    document.getElementById('progress-card').classList.add('visible');
-    document.getElementById('process-btn').disabled = true;
-
-    try {
-      // Step 1: Read file
-      setStep('upload', 'active');
-      const base64 = await fileToBase64(selectedFile);
-      setStep('upload', 'done');
-
-      // Step 2: Transcribe
-      setStep('transcribe', 'active');
-      const transcribeRes = await fetch('/api/transcribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          audio: base64,
-          filename: selectedFile.name,
-          mimeType: selectedFile.type || 'audio/mpeg'
-        })
-      });
-      const transcribeData = await transcribeRes.json();
-      if (transcribeData.error) throw new Error(transcribeData.error);
-      setStep('transcribe', 'done');
-
-      // Step 3: Analyze
-      setStep('analyze', 'active');
-      const analyzeRes = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          transcript: transcribeData.transcript,
-          language: lang
-        })
-      });
-      const analyzeData = await analyzeRes.json();
-      if (analyzeData.error) throw new Error(analyzeData.error);
-      setStep('analyze', 'done');
-
-      analysisData = analyzeData;
-      renderResults(analyzeData, document.getElementById('show-transcript').checked);
-
-    } catch (err) {
-      const steps = ['upload', 'transcribe', 'analyze'];
-      steps.forEach(s => {
-        const el = document.getElementById('step-' + s);
-        if (el.className.includes('active')) setStep(s, 'error');
-      });
-      alert('Error: ' + err.message);
-      document.getElementById('upload-card').style.opacity = '1';
-      document.getElementById('upload-card').style.pointerEvents = 'auto';
-      document.getElementById('process-btn').disabled = false;
-    }
-  }
-
-  function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  function renderResults(data, showTranscript) {
-    document.getElementById('progress-card').classList.remove('visible');
-    document.getElementById('results-card').classList.add('visible');
-
-    // Speakers
-    const grid = document.getElementById('speakers-grid');
-    grid.innerHTML = '';
-    (data.speakers || []).forEach((sp, i) => {
-      const color = COLORS[i % COLORS.length];
-      const initial = (sp.name || sp.label || 'S').charAt(0).toUpperCase();
-      grid.innerHTML += `
-        <div class="speaker-chip">
-          <div class="speaker-avatar" style="background:${color}">${initial}</div>
-          <div class="speaker-info">
-            <div class="speaker-name">${escHtml(sp.name || sp.label)}</div>
-            <div class="speaker-role">${escHtml(sp.role || sp.summary?.substring(0,40) || 'Participant')}</div>
-          </div>
-        </div>`;
-    });
-
-    // Summary tab
-    document.getElementById('summary-text').textContent = data.tabs?.summary || '—';
-
-    // Chapters
-    const chapList = document.getElementById('chapters-list');
-    chapList.innerHTML = '';
-    (data.chapters || []).forEach((ch, i) => {
-      chapList.innerHTML += `
-        <div class="chapter">
-          <div class="chapter-header">
-            <div class="chapter-num">${i + 1}</div>
-            <div class="chapter-title">${escHtml(ch.title)}</div>
-            ${ch.timestamp ? `<div class="chapter-time">⏱ ${escHtml(ch.timestamp)}</div>` : ''}
-          </div>
-          <div class="chapter-body">${escHtml(ch.summary)}</div>
-        </div>`;
-    });
-
-    // Key points
-    const kpList = document.getElementById('keypoints-list');
-    kpList.innerHTML = '';
-    (data.tabs?.keyPoints || []).forEach(kp => {
-      kpList.innerHTML += `<li class="key-point">${escHtml(kp)}</li>`;
-    });
-
-    // Highlights
-    const hlList = document.getElementById('highlights-list');
-    hlList.innerHTML = '';
-    (data.tabs?.highlights || []).forEach(hl => {
-      hlList.innerHTML += `
-        <div class="highlight">
-          <div class="highlight-speaker">${escHtml(hl.speaker)}</div>
-          <div class="highlight-quote">"${escHtml(hl.quote)}"</div>
-          <div class="highlight-context">${escHtml(hl.context)}</div>
-        </div>`;
-    });
-
-    // Transcript
-    if (showTranscript && data.translatedTranscript) {
-      const lines = data.translatedTranscript.split('\n').filter(l => l.trim());
-      const transcriptBody = document.getElementById('transcript-body');
-      transcriptBody.innerHTML = lines.map(line => {
-        const match = line.match(/^\[(.+?)\]:\s*(.+)$/);
-        if (match) {
-          return `<div class="transcript-line"><strong>${escHtml(match[1])}:</strong> ${escHtml(match[2])}</div>`;
-        }
-        return `<div class="transcript-line">${escHtml(line)}</div>`;
-      }).join('');
-      document.getElementById('transcript-section').style.display = 'block';
-    } else {
-      document.getElementById('transcript-section').style.display = 'none';
-    }
-  }
-
-  function switchTab(tab, el) {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    el.classList.add('active');
-    document.getElementById('tab-' + tab).classList.add('active');
-  }
-
-  function toggleTranscript() {
-    const body = document.getElementById('transcript-body');
-    const arrow = document.getElementById('transcript-arrow');
-    body.classList.toggle('visible');
-    arrow.classList.toggle('open');
-  }
-
-  function copyResults() {
-    if (!analysisData) return;
-    const t = analysisData.tabs;
-    const text = [
-      '=== MEETING SUMMARY ===',
-      t?.summary || '',
-      '',
-      '=== KEY POINTS ===',
-      (t?.keyPoints || []).map((k, i) => `${i+1}. ${k}`).join('\n'),
-      '',
-      '=== HIGHLIGHTS ===',
-      (t?.highlights || []).map(h => `[${h.speaker}] "${h.quote}"\n→ ${h.context}`).join('\n\n'),
-    ].join('\n');
-    navigator.clipboard.writeText(text).then(() => {
-      const btn = event.target;
-      btn.textContent = '✅ Copied!';
-      setTimeout(() => btn.textContent = '📋 Copy Summary', 2000);
-    });
-  }
-
-  function downloadResults() {
-    if (!analysisData) return;
-    const t = analysisData.tabs;
-    const speakers = (analysisData.speakers || []).map(s => `• ${s.name || s.label}${s.role ? ` (${s.role})` : ''}: ${s.summary || ''}`).join('\n');
-    const chapters = (analysisData.chapters || []).map((c, i) => `Chapter ${i+1}: ${c.title}\n${c.timestamp ? `Time: ${c.timestamp}\n` : ''}${c.summary}`).join('\n\n');
-    const text = [
-      'MEETING ANALYSIS REPORT',
-      '========================',
-      '',
-      'PARTICIPANTS',
-      speakers,
-      '',
-      'SUMMARY',
-      t?.summary || '',
-      '',
-      'CHAPTERS',
-      chapters,
-      '',
-      'KEY POINTS',
-      (t?.keyPoints || []).map((k, i) => `${i+1}. ${k}`).join('\n'),
-      '',
-      'HIGHLIGHTS',
-      (t?.highlights || []).map(h => `[${h.speaker}]\n"${h.quote}"\n→ ${h.context}`).join('\n\n'),
-      '',
-      'TRANSCRIPT',
-      analysisData.translatedTranscript || '(not included)',
-    ].join('\n');
-
-    const blob = new Blob([text], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'meeting-analysis.txt';
-    a.click(); URL.revokeObjectURL(url);
-  }
-
-  function resetApp() {
-    analysisData = null;
-    selectedFile = null;
-    fileInput.value = '';
-    document.getElementById('file-info').classList.remove('visible');
-    document.getElementById('process-btn').disabled = true;
-    document.getElementById('upload-card').style.opacity = '1';
-    document.getElementById('upload-card').style.pointerEvents = 'auto';
-    document.getElementById('progress-card').classList.remove('visible');
-    document.getElementById('results-card').classList.remove('visible');
-    ['upload','transcribe','analyze'].forEach(s => setStep(s, ''));
-    document.getElementById('transcript-body').classList.remove('visible');
-    document.getElementById('transcript-arrow').classList.remove('open');
-  }
-
-  function escHtml(s) {
-    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 </script>
 </body>
 </html>
