@@ -698,7 +698,6 @@ function togAcc(id){document.getElementById(id).classList.toggle('open');}
 function render(d,showTr){
   showPage('page-res');
   ['acc-summary','acc-kp','acc-hl','acc-ch','acc-tr'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('open');});
-  document.getElementById('acc-summary').classList.add('open');
   document.getElementById('sp-chips').innerHTML=(d.speakers||[]).map((s,i)=>{const c=COLORS[i%COLORS.length];const init=(s.name||s.label||'?').charAt(0).toUpperCase();return `<div class="sp-chip"><div class="sp-av" style="background:${c}">${init}</div><div><div class="sp-name">${esc(s.name||s.label)}</div><div class="sp-role">${esc(s.role||'Participant')}</div></div></div>`;}).join('');
   const sarr=Array.isArray(d.tabs?.summary)?d.tabs.summary:[{point:String(d.tabs?.summary||''),subPoints:[]}];
   document.getElementById('sum-list').innerHTML=sarr.map(b=>`<div class="bul-item"><div class="bul-main">${esc(b.point)}</div><div class="bul-subs">${(b.subPoints||[]).map(s=>`<div class="bul-sub">${esc(s)}</div>`).join('')}</div></div>`).join('');
@@ -713,8 +712,14 @@ function render(d,showTr){
   document.getElementById('ch-list').innerHTML=charr.map((c,i)=>`<div class="ch"><div class="ch-hd"><div class="ch-n">${i+1}</div><div class="ch-title">${esc(c.title)}</div>${c.timestamp?`<div class="ch-time">${esc(c.timestamp)}</div>`:''}</div><div class="ch-body">${esc(c.summary)}</div></div>`).join('');
   document.getElementById('ch-count').textContent=charr.length;
   const trEl=document.getElementById('acc-tr');
-  if(showTr&&d.transcripts){trEl.style.display='block';renderTr('translated');}
-  else trEl.style.display='none';
+  if(showTr&&d.transcripts){
+    trEl.style.display='block';
+    trEl.classList.add('open');
+    renderTr('translated');
+    const trLines=(d.transcripts.translated||'').split('\n').filter(l=>l.trim()).length;
+    const trCountEl=document.getElementById('tr-count');
+    if(trCountEl)trCountEl.textContent=trLines+' lines';
+  } else trEl.style.display='none';
 }
 
 function renderTr(lang){
