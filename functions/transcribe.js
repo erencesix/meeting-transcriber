@@ -1,12 +1,29 @@
 exports.handler = async function (event) {
   if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
+    return { statusCode: 405, body: JSON.stringify({ error: "Method Not Allowed" }) };
   }
 
   const OPENAI_KEY = process.env.OPENAI_API_KEY;
 
+  if (!OPENAI_KEY) {
+    return { statusCode: 500, body: JSON.stringify({ error: "API key not configured. Add OPENAI_API_KEY to Netlify environment variables." }) };
+  }
+
+  let audio, filename, mimeType;
   try {
-    const { audio, filename, mimeType } = JSON.parse(event.body);
+    const body = JSON.parse(event.body);
+    audio = body.audio;
+    filename = body.filename;
+    mimeType = body.mimeType;
+  } catch (e) {
+    return { statusCode: 400, body: JSON.stringify({ error: "Invalid request body: " + e.message }) };
+  }
+
+  if (!audio) {
+    return { statusCode: 400, body: JSON.stringify({ error: "No audio data received." }) };
+  }
+
+  try {
     const audioBuffer = Buffer.from(audio, "base64");
 
     const form = new FormData();
@@ -14,7 +31,6 @@ exports.handler = async function (event) {
     form.append("file", blob, filename || "audio.mp3");
     form.append("model", "whisper-1");
     form.append("response_format", "verbose_json");
-    // No language hint — Whisper auto-detects per segment, handles mixed JP/EN/ID
     form.append("timestamp_granularities[]", "segment");
 
     const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
@@ -23,13 +39,19 @@ exports.handler = async function (event) {
       body: form,
     });
 
-    const data = await response.json();
+    const rawText = await response.text();
 
-    if (data.error) {
-      return { statusCode: 500, body: JSON.stringify({ error: data.error.message }) };
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      return { statusCode: 500, body: JSON.stringify({ error: "OpenAI returned unexpected response: " + rawText.substring(0, 200) }) };
     }
 
-    // Format segments with timestamps for downstream use
+    if (data.error) {
+      return { statusCode: 500, body: JSON.stringify({ error: "OpenAI error: " + data.error.message }) };
+    }
+
     const segments = (data.segments || []).map(seg => ({
       start: seg.start,
       end: seg.end,
