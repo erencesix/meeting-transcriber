@@ -2,6 +2,12 @@
   publish = "public"
   functions = "functions"
 
+[functions."transcribe"]
+  timeout = 26
+
+[functions."analyze"]
+  timeout = 26
+
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
