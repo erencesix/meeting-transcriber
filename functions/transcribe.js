@@ -13,14 +13,13 @@ exports.handler = async function (event) {
     const blob = new Blob([audioBuffer], { type: mimeType || "audio/mpeg" });
     form.append("file", blob, filename || "audio.mp3");
     form.append("model", "whisper-1");
-    form.append("language", "ja");
     form.append("response_format", "verbose_json");
+    // No language hint — Whisper auto-detects per segment, handles mixed JP/EN/ID
+    form.append("timestamp_granularities[]", "segment");
 
     const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${OPENAI_KEY}`,
-      },
+      headers: { Authorization: `Bearer ${OPENAI_KEY}` },
       body: form,
     });
 
@@ -30,12 +29,20 @@ exports.handler = async function (event) {
       return { statusCode: 500, body: JSON.stringify({ error: data.error.message }) };
     }
 
+    // Format segments with timestamps for downstream use
+    const segments = (data.segments || []).map(seg => ({
+      start: seg.start,
+      end: seg.end,
+      text: seg.text.trim(),
+      startFormatted: formatTime(seg.start),
+    }));
+
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         transcript: data.text,
-        segments: data.segments || [],
+        segments,
       }),
     };
   } catch (err) {
@@ -45,3 +52,9 @@ exports.handler = async function (event) {
     };
   }
 };
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
