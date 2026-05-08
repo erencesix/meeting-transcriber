@@ -8,6 +8,9 @@
 [functions."analyze"]
   timeout = 26
 
+[functions."analyze-background"]
+  timeout = 900
+
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
