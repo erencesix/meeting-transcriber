@@ -422,9 +422,10 @@ body{
 .tr-btn.on{background:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.85);color:var(--ink);box-shadow:0 1px 4px rgba(20,40,120,0.1);}
 .tr-body{display:none;}
 .tr-body.on{display:block;}
-.tr-line{font-size:12px;line-height:2.1;color:var(--ink2);font-weight:300;}
+.tr-line{font-size:12px;line-height:2.1;color:var(--ink2);font-weight:300;display:flex;align-items:baseline;gap:2px;}
 .tr-line strong{color:var(--ink);font-weight:500;}
 .tr-line.jp{font-size:11px;color:var(--ink3);line-height:1.7;}
+.tr-ts{font-size:10px;font-weight:600;color:var(--ink3);font-family:'Inter',monospace;background:rgba(255,255,255,0.4);border:1px solid rgba(255,255,255,0.6);border-radius:4px;padding:1px 5px;margin-right:4px;letter-spacing:0.02em;flex-shrink:0;}
 
 /* Actions */
 .act-row{display:flex;gap:8px;padding:0 0 1rem;}
@@ -680,7 +681,7 @@ async function run(){
     if(trData.error)throw new Error(trData.error);
     setStep('tr','done');
     setStep('an','active');
-    const anRes=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({transcript:trData.transcript,language:lang})});
+    const anRes=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({transcript:trData.transcript,segments:trData.segments||[],language:lang})});
     const anData=await anRes.json();
     if(anData.error)throw new Error(anData.error);
     setStep('an','done');
@@ -726,8 +727,16 @@ function renderTr(lang){
   trLang=lang;const tr=data?.transcripts;if(!tr)return;
   const src=tr[lang]||tr['translated']||'';
   document.getElementById('tr-body').innerHTML=src.split('\n').filter(l=>l.trim()).map(l=>{
-    const isJp=l.includes('-JP]:');const m=l.match(/^\[(.+?)\]:\s*(.+)$/);
-    return m?`<div class="tr-line${isJp?' jp':''}">${isJp?'':'<strong>'}${esc(m[1])}:${isJp?'':'</strong>'} ${esc(m[2])}</div>`:`<div class="tr-line${isJp?' jp':''}">${esc(l)}</div>`;
+    const isJp=l.includes('- JP]:') || l.includes('-JP]:');
+    // Match: [M:SS] [Speaker]: text  OR  [Speaker]: text
+    const mTs=l.match(/^(\[\d+:\d+\])\s*\[(.+?)\]:\s*(.+)$/);
+    const mPlain=l.match(/^\[(.+?)\]:\s*(.+)$/);
+    if(mTs){
+      return `<div class="tr-line${isJp?' jp':''}"><span class="tr-ts">${esc(mTs[1])}</span> ${isJp?'':'<strong>'}${esc(mTs[2])}:${isJp?'':'</strong>'} ${esc(mTs[3])}</div>`;
+    } else if(mPlain){
+      return `<div class="tr-line${isJp?' jp':''}">${isJp?'':'<strong>'}${esc(mPlain[1])}:${isJp?'':'</strong>'} ${esc(mPlain[2])}</div>`;
+    }
+    return `<div class="tr-line${isJp?' jp':''}">${esc(l)}</div>`;
   }).join('');
 }
 function setTrLang(lang,el){document.querySelectorAll('.tr-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderTr(lang);}
