@@ -674,87 +674,104 @@ function setStep(id,state){
 
 function showErr(msg){const e=document.getElementById('err-box');e.textContent=msg;e.classList.add('on');showPage('page-upload');}
 
+// Get API key from Netlify function (so it stays server-side)
+let _apiKey = null;
+async function getKey(){
+  if(_apiKey) return _apiKey;
+  const res = await fetch('/api/getkey');
+  const data = await res.json();
+  if(!data.key) throw new Error('API key not configured on server.');
+  _apiKey = data.key;
+  return _apiKey;
+}
+
+function formatTimeFE(seconds){
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return m + ':' + s.toString().padStart(2,'0');
+}
+
+async function safeFetch(url, body){
+  const res = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const text = await res.text();
+  let parsed;
+  try{ parsed = JSON.parse(text); }
+  catch(e){ throw new Error('Server error (status '+res.status+'). Try again or use a shorter file.'); }
+  if(parsed.error) throw new Error(parsed.error);
+  return parsed;
+}
+
+async function transcribeChunked(file, apiKey){
+  const CHUNK_SIZE = 24 * 1024 * 1024; // 24MB — Whisper's actual limit
+  const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+  let allSegments = [];
+  let allText = '';
+  let timeOffset = 0;
+
+  for(let i = 0; i < totalChunks; i++){
+    const start = i * CHUNK_SIZE;
+    const end = Math.min(start + CHUNK_SIZE, file.size);
+    const chunk = file.slice(start, end, file.type);
+
+    const descEl = document.querySelector('#ps-tr .p-desc');
+    if(descEl) descEl.textContent = totalChunks > 1
+      ? 'Part ' + (i+1) + ' of ' + totalChunks + '...'
+      : 'Converting speech to text...';
+
+    // Call Whisper API directly from browser — no Netlify timeout
+    const fd = new FormData();
+    fd.append('file', new File([chunk], file.name, {type: file.type || 'audio/mpeg'}));
+    fd.append('model', 'whisper-1');
+    fd.append('response_format', 'verbose_json');
+    fd.append('timestamp_granularities[]', 'segment');
+
+    const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + apiKey },
+      body: fd
+    });
+
+    const text = await res.text();
+    let result;
+    try{ result = JSON.parse(text); }
+    catch(e){ throw new Error('Whisper returned unexpected response: ' + text.substring(0,200)); }
+    if(result.error) throw new Error('Whisper error: ' + result.error.message);
+
+    if(!result.text) continue;
+    allText += (allText ? ' ' : '') + result.text;
+
+    const segs = (result.segments || []).map(s => ({
+      start: s.start + timeOffset,
+      end: s.end + timeOffset,
+      text: s.text.trim(),
+      startFormatted: formatTimeFE(s.start + timeOffset),
+    }));
+    allSegments = allSegments.concat(segs);
+
+    if(result.segments && result.segments.length > 0){
+      timeOffset += result.segments[result.segments.length - 1].end + 0.1;
+    } else {
+      timeOffset += (end - start) / (16000); // fallback estimate
+    }
+  }
+
+  return { transcript: allText, segments: allSegments };
+}
+
 async function run(){
   if(!file)return;
   document.getElementById('err-box').classList.remove('on');
   showPage('page-prog');
   const lang=document.getElementById('lang').value;
 
-  async function safeFetch(url, body){
-    const res = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    const text = await res.text();
-    let parsed;
-    try{ parsed = JSON.parse(text); }
-    catch(e){ throw new Error('Server returned an unexpected response (status '+res.status+'). The request may have timed out.'); }
-    if(parsed.error) throw new Error(parsed.error);
-    return parsed;
-  }
-
-  // Split file into chunks of ~3MB to stay under Netlify's 6MB body limit (base64 inflates ~33%)
-  async function transcribeChunked(file){
-    const CHUNK_SIZE = 3 * 1024 * 1024; // 3MB per chunk
-    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-    let allSegments = [];
-    let allText = '';
-    let timeOffset = 0;
-
-    for(let i = 0; i < totalChunks; i++){
-      const start = i * CHUNK_SIZE;
-      const end = Math.min(start + CHUNK_SIZE, file.size);
-      const chunk = file.slice(start, end);
-
-      // Show chunk progress
-      const stepEl = document.getElementById('ps-tr');
-      const descEl = stepEl?.querySelector('.p-desc');
-      if(descEl) descEl.textContent = totalChunks > 1
-        ? `Chunk ${i+1} of ${totalChunks}...`
-        : 'Converting speech to text...';
-
-      const b64 = await toB64(new File([chunk], file.name, {type: file.type}));
-      const result = await safeFetch('/api/transcribe',{
-        audio: b64,
-        filename: file.name,
-        mimeType: file.type || 'audio/mpeg'
-      });
-
-      if(!result.transcript) continue;
-      allText += (allText ? ' ' : '') + result.transcript;
-
-      // Offset segment timestamps by accumulated duration
-      const offsetSegs = (result.segments || []).map(s => ({
-        ...s,
-        start: s.start + timeOffset,
-        end: s.end + timeOffset,
-        startFormatted: formatTimeFE(s.start + timeOffset),
-      }));
-      allSegments = allSegments.concat(offsetSegs);
-
-      // Estimate duration of this chunk for next offset
-      // Use last segment end if available, else estimate from file size ratio
-      if(result.segments && result.segments.length > 0){
-        timeOffset += result.segments[result.segments.length - 1].end + 0.1;
-      } else {
-        // Rough estimate: assume ~128kbps MP3
-        timeOffset += (end - start) / (128 * 1024 / 8);
-      }
-    }
-
-    return { transcript: allText, segments: allSegments };
-  }
-
-  function formatTimeFE(seconds){
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    return m + ':' + s.toString().padStart(2,'0');
-  }
-
   try{
     setStep('read','active');
+    const apiKey = await getKey();
     setStep('read','done');
 
     setStep('tr','active');
-    const trData = await transcribeChunked(file);
-    if(!trData.transcript) throw new Error('Transcription returned empty. Check that the file contains audio.');
+    const trData = await transcribeChunked(file, apiKey);
+    if(!trData.transcript) throw new Error('Transcription returned empty. Check the file contains audio.');
     setStep('tr','done');
 
     setStep('an','active');
