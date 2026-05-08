@@ -511,7 +511,7 @@ body{
         <div class="dz-ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:#6b7099"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg></div>
         <div class="dz-text">
           <h3>Drop your meeting recording here</h3>
-          <p>Any language — or click to browse your files</p>
+          <p>Any language · Up to 25MB · or click to browse</p>
           <div class="dz-types"><span>MP3</span><span>MP4</span><span>WAV</span><span>M4A</span><span>OGG</span><span>WEBM</span><span>MOV</span></div>
         </div>
       </div>
@@ -561,7 +561,7 @@ body{
     </div>
     <div class="prog-steps">
       <div class="p-step" id="ps-read"><div class="p-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:#6b7099"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div><div class="p-txt"><div class="p-title">Reading file</div><div class="p-desc">Preparing audio</div></div><div class="p-st" id="pss-read">–</div></div>
-      <div class="p-step" id="ps-tr"><div class="p-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:#6b7099"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg></div><div class="p-txt"><div class="p-title">Transcribing Japanese</div><div class="p-desc">Whisper AI — speech to text</div></div><div class="p-st" id="pss-tr">–</div></div>
+      <div class="p-step" id="ps-tr"><div class="p-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:#6b7099"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg></div><div class="p-txt"><div class="p-title">Transcribing audio</div><div class="p-desc">Whisper AI — speech to text</div></div><div class="p-st" id="pss-tr">–</div></div>
       <div class="p-step" id="ps-an"><div class="p-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:#6b7099"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg></div><div class="p-txt"><div class="p-title">Translating & analyzing</div><div class="p-desc">Building your report</div></div><div class="p-st" id="pss-an">–</div></div>
     </div>
   </div>
@@ -646,6 +646,14 @@ dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
 dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');if(e.dataTransfer.files[0])pick(e.dataTransfer.files[0]);});
 
 function pick(f){
+  const MAX_MB = 25;
+  const MAX_BYTES = MAX_MB * 1024 * 1024;
+  if(f.size > MAX_BYTES){
+    const err=document.getElementById('err-box');
+    err.textContent='File too large ('+( f.size/1048576).toFixed(1)+' MB). Maximum is 25MB.';
+    err.classList.add('on');
+    return;
+  }
   file=f;
   document.getElementById('fname').textContent=f.name;
   document.getElementById('fsize').textContent=f.size<1048576?(f.size/1024).toFixed(1)+' KB':(f.size/1048576).toFixed(1)+' MB';
@@ -671,20 +679,92 @@ async function run(){
   document.getElementById('err-box').classList.remove('on');
   showPage('page-prog');
   const lang=document.getElementById('lang').value;
+
+  async function safeFetch(url, body){
+    const res = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const text = await res.text();
+    let parsed;
+    try{ parsed = JSON.parse(text); }
+    catch(e){ throw new Error('Server returned an unexpected response (status '+res.status+'). The request may have timed out.'); }
+    if(parsed.error) throw new Error(parsed.error);
+    return parsed;
+  }
+
+  // Split file into chunks of ~3MB to stay under Netlify's 6MB body limit (base64 inflates ~33%)
+  async function transcribeChunked(file){
+    const CHUNK_SIZE = 3 * 1024 * 1024; // 3MB per chunk
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    let allSegments = [];
+    let allText = '';
+    let timeOffset = 0;
+
+    for(let i = 0; i < totalChunks; i++){
+      const start = i * CHUNK_SIZE;
+      const end = Math.min(start + CHUNK_SIZE, file.size);
+      const chunk = file.slice(start, end);
+
+      // Show chunk progress
+      const stepEl = document.getElementById('ps-tr');
+      const descEl = stepEl?.querySelector('.p-desc');
+      if(descEl) descEl.textContent = totalChunks > 1
+        ? `Chunk ${i+1} of ${totalChunks}...`
+        : 'Converting speech to text...';
+
+      const b64 = await toB64(new File([chunk], file.name, {type: file.type}));
+      const result = await safeFetch('/api/transcribe',{
+        audio: b64,
+        filename: file.name,
+        mimeType: file.type || 'audio/mpeg'
+      });
+
+      if(!result.transcript) continue;
+      allText += (allText ? ' ' : '') + result.transcript;
+
+      // Offset segment timestamps by accumulated duration
+      const offsetSegs = (result.segments || []).map(s => ({
+        ...s,
+        start: s.start + timeOffset,
+        end: s.end + timeOffset,
+        startFormatted: formatTimeFE(s.start + timeOffset),
+      }));
+      allSegments = allSegments.concat(offsetSegs);
+
+      // Estimate duration of this chunk for next offset
+      // Use last segment end if available, else estimate from file size ratio
+      if(result.segments && result.segments.length > 0){
+        timeOffset += result.segments[result.segments.length - 1].end + 0.1;
+      } else {
+        // Rough estimate: assume ~128kbps MP3
+        timeOffset += (end - start) / (128 * 1024 / 8);
+      }
+    }
+
+    return { transcript: allText, segments: allSegments };
+  }
+
+  function formatTimeFE(seconds){
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return m + ':' + s.toString().padStart(2,'0');
+  }
+
   try{
     setStep('read','active');
-    const b64=await toB64(file);
     setStep('read','done');
+
     setStep('tr','active');
-    const trRes=await fetch('/api/transcribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({audio:b64,filename:file.name,mimeType:file.type||'audio/mpeg'})});
-    const trData=await trRes.json();
-    if(trData.error)throw new Error(trData.error);
+    const trData = await transcribeChunked(file);
+    if(!trData.transcript) throw new Error('Transcription returned empty. Check that the file contains audio.');
     setStep('tr','done');
+
     setStep('an','active');
-    const anRes=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({transcript:trData.transcript,segments:trData.segments||[],language:lang})});
-    const anData=await anRes.json();
-    if(anData.error)throw new Error(anData.error);
+    const anData = await safeFetch('/api/analyze',{
+      transcript: trData.transcript,
+      segments: trData.segments || [],
+      language: lang
+    });
     setStep('an','done');
+
     data=anData;render(anData,document.getElementById('show-tr').checked);
   }catch(e){
     ['read','tr','an'].forEach(id=>{if(document.getElementById('ps-'+id).className.includes('active'))setStep(id,'err');});
@@ -692,7 +772,7 @@ async function run(){
   }
 }
 
-function toB64(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(f);});}
+function toB64(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=()=>rej(new Error('Failed to read file'));r.readAsDataURL(f);});}
 
 function togAcc(id){document.getElementById(id).classList.toggle('open');}
 
@@ -701,17 +781,17 @@ function render(d,showTr){
   ['acc-summary','acc-kp','acc-hl','acc-ch','acc-tr'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('open');});
   document.getElementById('sp-chips').innerHTML=(d.speakers||[]).map((s,i)=>{const c=COLORS[i%COLORS.length];const init=(s.name||s.label||'?').charAt(0).toUpperCase();return `<div class="sp-chip"><div class="sp-av" style="background:${c}">${init}</div><div><div class="sp-name">${esc(s.name||s.label)}</div><div class="sp-role">${esc(s.role||'Participant')}</div></div></div>`;}).join('');
   const sarr=Array.isArray(d.tabs?.summary)?d.tabs.summary:[{point:String(d.tabs?.summary||''),subPoints:[]}];
-  document.getElementById('sum-list').innerHTML=sarr.map(b=>`<div class="bul-item"><div class="bul-main">${esc(b.point)}</div><div class="bul-subs">${(b.subPoints||[]).map(s=>`<div class="bul-sub">${esc(s)}</div>`).join('')}</div></div>`).join('');
-  document.getElementById('sum-count').textContent=sarr.length;
+  document.getElementById('sum-list').innerHTML=sarr.length&&sarr[0].point?sarr.map(b=>`<div class="bul-item"><div class="bul-main">${esc(b.point)}</div><div class="bul-subs">${(b.subPoints||[]).map(s=>`<div class="bul-sub">${esc(s)}</div>`).join('')}</div></div>`).join(''):'<div style="font-size:13px;color:var(--ink3);font-style:italic;">No summary generated.</div>';
+  document.getElementById('sum-count').textContent=sarr.filter(b=>b.point).length||'';
   const karr=Array.isArray(d.tabs?.keyPoints)?d.tabs.keyPoints:[];
-  document.getElementById('kp-list').innerHTML=karr.map(k=>{const pt=typeof k==='string'?k:k.point;const subs=typeof k==='string'?[]:(k.subPoints||[]);return `<div class="kp-item"><div class="kp-main">${esc(pt)}</div><div class="kp-subs">${subs.map(s=>`<div class="kp-sub">${esc(s)}</div>`).join('')}</div></div>`;}).join('');
-  document.getElementById('kp-count').textContent=karr.length;
+  document.getElementById('kp-list').innerHTML=karr.length?karr.map(k=>{const pt=typeof k==='string'?k:k.point;const subs=typeof k==='string'?[]:(k.subPoints||[]);return `<div class="kp-item"><div class="kp-main">${esc(pt)}</div><div class="kp-subs">${subs.map(s=>`<div class="kp-sub">${esc(s)}</div>`).join('')}</div></div>`;}).join(''):'<div style="font-size:13px;color:var(--ink3);font-style:italic;">No decisions or action items detected.</div>';
+  document.getElementById('kp-count').textContent=karr.length||'';
   const hlarr=d.tabs?.highlights||[];
-  document.getElementById('hl-list').innerHTML=hlarr.map(h=>`<div class="hl"><div class="hl-sp">${esc(h.speaker)}</div><div class="hl-q">"${esc(h.quote)}"</div><div class="hl-ctx">${esc(h.context)}</div></div>`).join('');
-  document.getElementById('hl-count').textContent=hlarr.length;
+  document.getElementById('hl-list').innerHTML=hlarr.length?hlarr.map(h=>`<div class="hl"><div class="hl-sp">${esc(h.speaker)}</div><div class="hl-q">"${esc(h.quote)}"</div><div class="hl-ctx">${esc(h.context)}</div></div>`).join(''):'<div style="font-size:13px;color:var(--ink3);font-style:italic;">No notable highlights found.</div>';
+  document.getElementById('hl-count').textContent=hlarr.length||'';
   const charr=d.chapters||[];
-  document.getElementById('ch-list').innerHTML=charr.map((c,i)=>`<div class="ch"><div class="ch-hd"><div class="ch-n">${i+1}</div><div class="ch-title">${esc(c.title)}</div>${c.timestamp?`<div class="ch-time">${esc(c.timestamp)}</div>`:''}</div><div class="ch-body">${esc(c.summary)}</div></div>`).join('');
-  document.getElementById('ch-count').textContent=charr.length;
+  document.getElementById('ch-list').innerHTML=charr.length?charr.map((c,i)=>`<div class="ch"><div class="ch-hd"><div class="ch-n">${i+1}</div><div class="ch-title">${esc(c.title)}</div>${c.timestamp?`<div class="ch-time">${esc(c.timestamp)}</div>`:''}</div><div class="ch-body">${esc(c.summary)}</div></div>`).join(''):'<div style="font-size:13px;color:var(--ink3);font-style:italic;">No chapters detected.</div>';
+  document.getElementById('ch-count').textContent=charr.length||'';
   const trEl=document.getElementById('acc-tr');
   if(showTr&&d.transcripts){
     trEl.style.display='block';
