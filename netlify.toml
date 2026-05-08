@@ -2,14 +2,11 @@
   publish = "public"
   functions = "functions"
 
-[functions."transcribe"]
-  timeout = 26
-
 [functions."analyze"]
   timeout = 26
 
-[functions."analyze-background"]
-  timeout = 900
+[functions."getkey"]
+  timeout = 5
 
 [[redirects]]
   from = "/api/*"
